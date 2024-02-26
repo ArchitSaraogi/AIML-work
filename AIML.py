@@ -1,4 +1,4 @@
-
+import math
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
@@ -10,63 +10,64 @@ df = pd.read_csv('NIFTY50_all.csv')
 column_headers = ['Open', 'High', 'Low','Close']
 
 # Convert the specified columns into NumPy arrays
-arrays = [0,0,0,0]
-for i in range(len(column_headers)):
-    arrays[i] = np.array(df[column_headers[i]],dtype=np.float64)
-x_1_train = arrays[0]
-x_2_train = arrays[1]
-x_3_train = arrays[2]
-y = arrays[3]
+arrays = [0,0,0]
+for i in range(len(column_headers)-1):
+    arrays[i]=[len(df[column_headers[i]])-15:len(df[column_headers[i]])-1]
+
+arrays = np.array(arrays)
+arrays = arrays.transpose()
+y = np.array(df[column_headers[len(column_headers)-1]],dtype=np.float64)
 
 
-def calulate_model(x,w,b):
-    f_n= np.dot(x,w) +b
-    return f_n
-def J(y,f_n):
-    J_ouput =0
-    for i in range(len(y)):
-        J_output+= (math.pow((f_n-y[i]),2))/(2*len(y))
-    return J_output
-w = [0,0,0]
-b = 0
-def changed_w(f_n,y,w,b,alpha,x_1_train,x_2_train,x_3_train):
-
-    dJ_dw1=0
-    dJ_dw2=0
-    dJ_dw3=0
-    dJ_db=0
-    for i in range(len(y)):
-        dJ_dw1+= (f_n -y[i])*x_1_train[i]/len(x_3_train)
-        dJ_dw2+= (f_n -y[i])*x_2_train[i]/len(x_3_train)
-        dJ_dw3+= (f_n -y[i])*x_3_train[i]/len(x_3_train)
-        dJ_db+= (f_n -y[i])/len(x_3_train)
-    w[0] -= alpha * dJ_dw1
-    w[1] -= alpha * dJ_dw2
-    w[2] -= alpha * dJ_dw3
-    b-=dJ_db
-
-    return [b,w]
+def compute_cost(X, y, w, b): 
+    m = X.shape[0]
+    cost = 0.0
+    for i in range(m):                                
+        f_wb_i = np.dot(X[i], w) + b           #(n,)(n,) = scalar (see np.dot)
+        cost = cost + (f_wb_i - y[i])**2       #scalar
+    cost = cost / (2 * m)                      #scalar    
+    return cost
 
 
-def calulate_weights(iterations,y,b,w,alpha,x_1_train,x_2_train,x_3_train):
-    set = []
-    for i in range(len(x_1_train)):
-        row= []
-        row.append(x_1_train[i])
-        row.append(x_2_train[i])
-        row.append(x_3_train[i])
-        set.append(row)
+def compute_gradient(X, y, w, b): 
+    m,n = X.shape      
+    dj_dw = np.zeros((n,))
+    dj_db = 0
 
-    for i in range(iterations):
-        b=changed_w(calulate_model(np.array(set[i],dtype=np.float64),np.array(w,dtype=np.float64),b),y,np.array(w,dtype=np.float64),b,alpha,x_1_train,x_2_train,x_3_train)[0]
-        w=changed_w(calulate_model(np.array(set[i],dtype=np.float64),np.array(w,dtype=np.float64),b),y,np.array(w,dtype=np.float64),b,alpha,x_1_train,x_2_train,x_3_train)[1]
-    return [b,w]
+    for i in range(m):                             
+        err = (np.dot(X[i], w) + b) - y[i]   
+        for j in range(n):                         
+            dj_dw[j] = dj_dw[j] + err * X[i, j]    
+        dj_db = dj_db + err                        
+    dj_dw = dj_dw / m                                
+    dj_db = dj_db / m                                
+        
+    return dj_db, dj_dw
+
+def gradient_descent(X, y, w_in, b_in, cost_function, gradient_function, alpha, num_iters): 
+    J_history = []
+    w = w_in  
+    b = b_in
     
-b=calulate_weights(100,y,b,w,0.1,x_1_train,x_2_train,x_3_train)[0]
-w = np.array(calulate_weights(100,y,b,w,0.01,x_1_train,x_2_train,x_3_train)[1])
+    for i in range(num_iters):
+
+        dj_db,dj_dw = gradient_function(X, y, w, b)   ##None
+        w = w - alpha * dj_dw               ##None
+        b = b - alpha * dj_db               ##None
+      
+        if i<100000:      # prevent resource exhaustion 
+            J_history.append( cost_function(X, y, w, b))
+
+        if i% math.ceil(num_iters / 10) == 0:
+            print(f"Iteration {i:4d}: Cost {J_history[-1]:8.2f}   ")
+        
+    return w, b, J_history
+w=np.zeros(3)
+b =0
+
 l=[22290.00,22297.50,22186.10]
-final = b+ np.dot(w,l)
-print(final)
+w,b,J_hist= gradient_descent(arrays,y,w,b,compute_cost,compute_gradient,120e-2,1500)
+print(np.dot(np.array([7.6,4,2]),w)+b)
 
 
     
