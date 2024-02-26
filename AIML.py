@@ -12,11 +12,11 @@ column_headers = ['Open', 'High', 'Low','Close']
 # Convert the specified columns into NumPy arrays
 arrays = [0,0,0]
 for i in range(len(column_headers)-1):
-    arrays[i]=[len(df[column_headers[i]])-15:len(df[column_headers[i]])-1]
+    arrays[i] = np.array(df[column_headers[i]][-15:],dtype=np.float64)
 
-arrays = np.array(arrays)
+arrays = np.array(arrays)/100
 arrays = arrays.transpose()
-y = np.array(df[column_headers[len(column_headers)-1]],dtype=np.float64)
+y = np.array(df[column_headers[len(column_headers)-1]],dtype=np.float64)/100
 
 
 def compute_cost(X, y, w, b): 
@@ -66,8 +66,10 @@ w=np.zeros(3)
 b =0
 
 l=[22290.00,22297.50,22186.10]
-w,b,J_hist= gradient_descent(arrays,y,w,b,compute_cost,compute_gradient,120e-2,1500)
-print(np.dot(np.array([7.6,4,2]),w)+b)
+l = np.array(l)/100
+print(l)
+w,b,J_hist= gradient_descent(arrays,y,w,b,compute_cost,compute_gradient,5e-3,15000)
+print(np.dot(l,w)+b)
 
 
     
